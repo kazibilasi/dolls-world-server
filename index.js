@@ -3,7 +3,7 @@ const app = express();
 require('dotenv').config()
 const cors = require('cors');
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 
@@ -30,12 +30,44 @@ async function run() {
     await client.connect();
 
     const dollsCollection = client.db('dolls').collection('information')
-
-    app.get('/information',async (req, res)=>{
+    const addingCollection = client.db('dolls').collection('addingToys')
+    app.get('/information', async (req, res) => {
       const cursor = dollsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     })
+
+
+    app.get('/information/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await dollsCollection.findOne(query);
+      res.send(result);
+    })
+
+    app.post('/addingToys', async (req, res) => {
+      const addingToy = req.body;
+      const result = await addingCollection.insertOne(addingToy);
+      res.send(result);
+    });
+
+    app.get('/addingToys', async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { email: req.query.email }
+        const result = await addingCollection.find(query).toArray();
+        res.send(result);
+        console.log(result)
+      }
+    })
+    app.get('/dollsCategory/:subCategory', async (req, res) => {
+      let query = {sub_category: req.params.subCategory }
+      console.log(query)
+      const result = await dollsCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
